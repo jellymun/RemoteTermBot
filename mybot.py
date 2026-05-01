@@ -39,9 +39,18 @@ def bot(**kwargs) -> str | list[str] | None:
     if msg_lower.startswith('!'):
         msg_lower = msg_lower[1:].strip()
     
+    # Handle help command
+    if msg_lower == "help" or msg_lower == "?":
+        return """ Available commands:
+!ping - Check if bot is alive
+!test [phrase] - Test connection with optional message
+!path - Show routing path info
+!joke - Get a random joke
+!help - Show this message"""
+    
     # Handle ping command
-    if channel_name == "#mybot" and msg_lower == "ping":
-        return " Pong!"
+    if (channel_name == "#mybot" or channel_name == "#bot")  and msg_lower == "ping":
+        return " ACK!DCK"
     
     # Handle test command with optional phrase
     if (channel_name == "#mybot" or channel_name == "#bot") and (
