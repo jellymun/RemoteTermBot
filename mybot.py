@@ -1,3 +1,4 @@
+
 import requests
 import random
 
@@ -31,7 +32,7 @@ def bot(**kwargs) -> str | list[str] | None:
 !help - Show this message"""
     
     # Handle ping command
-    if (channel_name == "#maisybot" or channel_name == "#bot") and msg_lower == "ping":
+    if (channel_name == "#mybot" or channel_name == "#bot") and msg_lower == "ping":
         responses = [
             "PONG! 🏓", "ACK!DCK", "yo poking me! 🤖",
             "Signal received.", "Yarp online.", "Echo... echo...",
@@ -40,7 +41,7 @@ def bot(**kwargs) -> str | list[str] | None:
         return f"[BOT] {random.choice(responses)}"
     
     # Handle test command
-    if (channel_name == "#maisybot" or channel_name == "#bot") and (
+    if (channel_name == "#mybot" or channel_name == "#bot") and (
         msg_lower.startswith("test") or msg_lower == "t" or msg_lower.startswith("t ")
     ):
         if msg_lower.startswith("test"):
@@ -54,13 +55,13 @@ def bot(**kwargs) -> str | list[str] | None:
         return response
     
     # Handle path command
-    if channel_name == "#maisybot" and msg_lower == "path":
+    if channel_name == "#mybot" and msg_lower == "path":
         if path:
             return f" Path: {path} | Bytes per hop: {path_bytes_per_hop}"
         return " No path data in this message"
 
     # Handle joke command
-    if (channel_name == "#maisybot" or channel_name == "#bot") and (
+    if (channel_name == "#mybot" or channel_name == "#bot") and (
         msg_lower == "joke" or msg_lower == "dad joke" or msg_lower.startswith("joke ")
     ):
         try:
@@ -75,3 +76,6 @@ def bot(**kwargs) -> str | list[str] | None:
             return f" Error fetching joke: {str(e)}"
 
     return None
+
+Use Control + Shift + m to toggle the tab key moving focus. Alternatively, use esc then tab to move to the next interactive element on the page.
+ 
