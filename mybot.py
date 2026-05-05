@@ -76,6 +76,4 @@ def bot(**kwargs) -> str | list[str] | None:
             return f" Error fetching joke: {str(e)}"
 
     return None
-
-Use Control + Shift + m to toggle the tab key moving focus. Alternatively, use esc then tab to move to the next interactive element on the page.
- 
+    
