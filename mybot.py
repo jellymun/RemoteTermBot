@@ -1,3 +1,4 @@
+#-Bot V1-
 import requests
 import random
 import xml.etree.ElementTree as ET
@@ -16,28 +17,50 @@ def bot(**kwargs) -> str | list[str] | None:
     if is_outgoing:
         return None
     
-    # 3. Check if path hops are greater than 4 (ignore message if true)
-    def is_path_too_long(path_data: str | None) -> bool:
-        """Check if the number of path hops exceeds 4"""
-        if not path_data:
+    # 3. Channel restriction: ONLY respond in #mybot
+    if channel_name != "#mybot":
+        return None
+
+    if channel_name == "#public":
+        return None  
+      
+    if channel_name == "public":
+        return None  
+    
+    # 4. Check if path hops are greater than 4 (ignore message if true)
+    def is_path_too_long(path_hex: str | None, bytes_per_hop: int | None) -> bool:
+        """Check if the number of path hops exceeds 4
+        
+        Args:
+            path_hex: Hex string representing the path (e.g., "a1b2c3d4")
+            bytes_per_hop: Number of bytes per hop (1, 2, or 3)
+        
+        Returns:
+            True if hop count > 4, False otherwise
+        """
+        if not path_hex or not bytes_per_hop:
             return False
         
-        # Split the path string and count hops (assuming path is comma or space separated)
-        # Common path formats: "hop1,hop2,hop3" or "hop1 hop2 hop3"
-        if ',' in path_data:
-            hops = path_data.split(',')
-        else:
-            hops = path_data.split()
+        # Calculate characters per hop based on bytes_per_hop
+        # Each byte = 2 hex characters
+        chars_per_hop = bytes_per_hop * 2
         
-        # Count non-empty hops
-        hop_count = len([hop for hop in hops if hop.strip()])
+        # Ensure the hex string length is a multiple of chars_per_hop
+        # (if not, it might be malformed, but we'll handle gracefully)
+        if len(path_hex) % chars_per_hop != 0:
+            # If it doesn't divide evenly, treat as invalid and ignore
+            return True  # Better to be safe and ignore malformed paths
+        
+        # Calculate number of hops
+        hop_count = len(path_hex) // chars_per_hop
+        
         return hop_count > 4
     
     # If path has more than 4 hops, ignore the message entirely
-    if is_path_too_long(path):
+    if is_path_too_long(path, path_bytes_per_hop):
         return None
 
-    # 4. Clean up the message
+    # 5. Clean up the message
     msg_lower = message_text.lower().strip()
     if msg_lower.startswith('!'):
         msg_lower = msg_lower[1:].strip()
@@ -45,7 +68,7 @@ def bot(**kwargs) -> str | list[str] | None:
     # --- Commands Start Here (All Indented inside bot) ---
 
     # Handle help command
-    if msg_lower == "help" or msg_lower == "?":
+    if msg_lower == "!help":
         return """Available commands:
 !ping - Check if bot is alive
 !test [phrase] - Test connection
@@ -55,11 +78,9 @@ def bot(**kwargs) -> str | list[str] | None:
 !help - Show this message"""
     
     # Handle ping command
-    if (channel_name == "#mybot" or channel_name == "#bot") and msg_lower == "ping":
+    if msg_lower == "ping":
         responses = [
-            "PONG! 🏓", "ACK!DCK", "yo poking me! 🤖",
-            "Signal received.", "Yarp online.", "Echo... echo...",
-            "What? I was busy.", "Pong! Did I win?", "01010000 01001111 01001110 01000111"
+            "PONG! 🏓", "ACK"
         ]
         response = random.choice(responses)
         if sender_name: 
@@ -67,9 +88,7 @@ def bot(**kwargs) -> str | list[str] | None:
         return response
     
     # Handle test command
-    if (channel_name == "#mybot" or channel_name == "#bot") and (
-        msg_lower.startswith("test") or msg_lower == "t" or msg_lower.startswith("t ")
-    ):
+    if msg_lower.startswith("test") or msg_lower == "t" or msg_lower.startswith("t "):
         if msg_lower.startswith("test"):
             phrase = msg_lower[4:].strip()
         else:
@@ -83,22 +102,29 @@ def bot(**kwargs) -> str | list[str] | None:
         return response
     
     # Handle path command
-    if channel_name == "#mybot" and msg_lower == "path":
-        if path:
-            # Calculate hop count for display
-            if ',' in path:
-                hops = path.split(',')
-            else:
-                hops = path.split()
-            hop_count = len([hop for hop in hops if hop.strip()])
+    if msg_lower == "path":
+        if path and path_bytes_per_hop:
+            # Calculate characters per hop based on bytes_per_hop
+            chars_per_hop = path_bytes_per_hop * 2
             
-            return f" Path: {path} | Bytes per hop: {path_bytes_per_hop} | Total hops: {hop_count}"
+            # Calculate hop count
+            if len(path) % chars_per_hop == 0:
+                hop_count = len(path) // chars_per_hop
+            else:
+                hop_count = "Invalid (length mismatch)"
+            
+            # Format the path with grouping for readability
+            if hop_count != "Invalid (length mismatch)":
+                # Group the hex string into hops
+                hops = [path[i:i+chars_per_hop] for i in range(0, len(path), chars_per_hop)]
+                formatted_path = " , ".join(hops)
+                return f" Path: {formatted_path} | Bytes per hop: {path_bytes_per_hop} | Total hops: {hop_count}"
+            else:
+                return f" Path: {path} | Bytes per hop: {path_bytes_per_hop} | Invalid path format"
         return " No path data in this message"
 
     # Handle joke command
-    if (channel_name == "#mybot" or channel_name == "#bot") and (
-        msg_lower == "joke" or msg_lower == "dad joke" or msg_lower.startswith("joke ")
-    ):
+    if msg_lower == "joke" or msg_lower == "dad joke" or msg_lower.startswith("joke "):
         try:
             r = requests.get("https://official-joke-api.appspot.com/jokes/random", timeout=5)
             if r.status_code == 200:
@@ -116,9 +142,7 @@ def bot(**kwargs) -> str | list[str] | None:
             return "jokes on Us; unable to connect"
 
     # Handle FDR command (Fire Danger Rating)
-    if (channel_name == "#mybot" or channel_name == "#bot") and (
-        msg_lower.startswith("fdr") or msg_lower.startswith("fire") or msg_lower.startswith("firedanger")
-    ):
+    if msg_lower.startswith("fdr") or msg_lower.startswith("fire") or msg_lower.startswith("firedanger"):
         # Constants for FDR command
         RFS_FEED_URL = "https://www.rfs.nsw.gov.au/feeds/fdrToban.xml"
         DEFAULT_DISTRICT_NAME = "Greater Sydney Region"
@@ -162,7 +186,6 @@ def bot(**kwargs) -> str | list[str] | None:
                    f"Tomorrow {data['DangerLevelTomorrow']} ({tomorrow_ban})")
         
         # Extract the region name from the command
-        # Split the command (e.g., "fdr Greater Hunter" -> ["fdr", "Greater Hunter"])
         command_parts = msg_lower.split(maxsplit=1)
         
         # Default to Greater Sydney Region if no specific region provided
